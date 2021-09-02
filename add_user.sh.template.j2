@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+USER={{ user }}
+SSH_PUBLIC_KEY="{{ ssh_public_key }} "
+
+USER_HOME=/users/${USER}
+
+# create a user
+sudo useradd -m -d ${USER_HOME} -s /bin/bash ${USER}
+
+# add the user to the wheel group so they can sudo
+# usermod -a -G wheel ${USER}
+
+# add the ssh public key
+sudo mkdir ${USER_HOME}/.ssh
+echo ${SSH_PUBLIC_KEY} | sudo tee -a ${USER_HOME}/.ssh/authorized_keys
+
+# set correct permissions
+sudo chown -R ${USER}:${USER} ${USER_HOME}/.ssh
+sudo chmod 700 ${USER_HOME}/.ssh
+sudo chmod 600 ${USER_HOME}/.ssh/authorized_keys

@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# Adds an existing cluster user to a kubernetes cluster
+#
+# Based on:
+# https://www.openlogic.com/blog/granting-user-access-your-kubernetes-cluster#how-to-manage-kubernetes-user-accounts
+# https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+# https://www.linkedin.com/pulse/user-authentication-authorization-kubernetes-ajit-vedpathak/
+
+set -e
+
+USER={{ user }}
+
+errorhandler () {
+  ARG=$?
+  kubectl delete -f k8s-csr.yaml
+  kubectl delete ns ${USER}
+  if [ -f "cluster-binding.yaml" ]; then
+    kubectl delete -f cluster-binding.yaml
+  fi
+  exit $ARG
+}
+
+create_k8s_csr_file() {
+local USER=$1
+local CSR_BASE64=$2
+cat <<EOF > k8s-csr.yaml
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: ${USER}-k8s-access
+spec:
+  groups:
+  - system:authenticated
+  request: ${CSR_BASE64}
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+EOF
+}
+
+create_cluster_role_file() {
+cat <<EOF > cluster-role.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # namespace is removed as cluster level role is not namespaced
+  name: cluster-node-reader
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get","watch","list"]
+EOF
+}
+
+create_cluster_role_binding_file() {
+local USER=$1
+cat <<EOF > cluster-binding.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-binding
+subjects:
+- kind: User
+  name: ${USER}
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-node-reader
+  apiGroup: rbac.authorization.k8s.io
+EOF
+}
+
+trap errorhandler ERR
+
+# create a key and certificate signing request (CSR) for user access to the
+# cluster using openssl
+openssl req -new -newkey rsa:4096 -nodes -keyout ${USER}-k8s.key -out ${USER}-k8s.csr -subj "/CN=${USER}/O=devops"
+
+# sign CSR by the cluster CA
+CSR_BASE64=$(cat ${USER}-k8s.csr | base64 | tr -d '\n')
+create_k8s_csr_file ${USER} ${CSR_BASE64}
+kubectl create -f k8s-csr.yaml
+
+# approve the CSR object
+kubectl certificate approve ${USER}-k8s-access
+
+# retrieve USER certificate
+kubectl get csr ${USER}-k8s-access -o jsonpath='{.status.certificate}' | base64 --decode > ${USER}-k8s-access.crt
+
+# get the cluster CA certificate
+kubectl config view -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' --raw | base64 --decode - > k8s-ca.crt
+
+# set up the cluster configuration in USER kubeconfig file
+kubectl config set-cluster $(kubectl config view -o jsonpath='{.clusters[0].name}') --server=$(kubectl config view -o jsonpath='{.clusters[0].cluster.server}') --certificate-authority=k8s-ca.crt --kubeconfig=${USER}-k8s-config --embed-certs
+
+# import USER key and cert into the USER kubeconfig file
+kubectl config set-credentials ${USER} --client-certificate=${USER}-k8s-access.crt --client-key=${USER}-k8s.key --embed-certs --kubeconfig=${USER}-k8s-config
+
+# create USER context
+kubectl config set-context ${USER} --cluster=$(kubectl config view -o jsonpath='{.clusters[0].name}') --namespace=${USER} --user=${USER} --kubeconfig=${USER}-k8s-config
+
+# create namespace
+kubectl create ns ${USER}
+kubectl label ns ${USER} user=${USER} env=sandbox
+
+# specify the context that USER will use for their kubectl commands
+kubectl config use-context ${USER} --kubeconfig=${USER}-k8s-config
+
+# test USER kubeconfig
+kubectl version --kubeconfig=${USER}-k8s-config
+
+# assign roles to USER
+kubectl create rolebinding ${USER}-admin --namespace=${USER} --clusterrole=admin --user=${USER}
+
+# assign cluster role to USER
+create_cluster_role_file
+if [ -z "$(kubectl get -f cluster-role.yaml --ignore-not-found)" ]; then
+  kubectl create -f cluster-role.yaml
+fi
+create_cluster_role_binding_file ${USER}
+kubectl create -f cluster-binding.yaml
+
+# copy kubeconfig to USER kubeconfig
+sudo mkdir -p /users/${USER}/.kube
+sudo cp ${USER}-k8s-config /users/${USER}/.kube/config
+
+sudo chown ${USER}:${USER} /users/${USER}/.kube
+sudo chown ${USER}:${USER} /users/${USER}/.kube/config
+
+echo 'unset KUBECONFIG' | sudo tee -a /users/${USER}/.bashrc
