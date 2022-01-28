@@ -1,5 +1,7 @@
 #!/bin/bash
 
+USERS="root `ls /users`"
+
 # Setup password-less ssh between nodes
 for user in $USERS; do
     if [ "$user" = "root" ]; then
