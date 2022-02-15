@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Adapted from https://github.com/cstlee/cloudlab-profile
+
 USERS="root `ls /users`"
 
 # Install packages
