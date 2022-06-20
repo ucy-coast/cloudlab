@@ -7,12 +7,13 @@ USERS="root `ls /users`"
 # Install packages
 echo "Installing common utilities"
 apt-get update
-apt-get -yq install ccache htop mosh vim tmux pdsh tree axel
+apt-get -yq install vim
+# apt-get -yq install ccache htop mosh vim tmux pdsh tree axel
 
-echo "Installing performance tools"
-kernel_release=`uname -r`
-apt-get -yq install linux-tools-common linux-tools-${kernel_release} \
-        hugepages cpuset msr-tools i7z numactl tuned
+# echo "Installing performance tools"
+# kernel_release=`uname -r`
+# apt-get -yq install linux-tools-common linux-tools-${kernel_release} \
+#         hugepages cpuset msr-tools i7z numactl tuned
         
 # Setup password-less ssh between nodes
 for user in $USERS; do
