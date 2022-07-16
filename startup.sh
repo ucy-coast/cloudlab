@@ -16,6 +16,7 @@ apt-get -yq install vim
 #         hugepages cpuset msr-tools i7z numactl tuned
 
 # Install Go
+echo "Installing Go"
 GO_TARBALL=go1.18.4.linux-amd64.tar.gz
 wget https://go.dev/dl/$GO_TARBALL -P /local/downloads
 rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
