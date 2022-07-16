@@ -14,7 +14,13 @@ apt-get -yq install vim
 # kernel_release=`uname -r`
 # apt-get -yq install linux-tools-common linux-tools-${kernel_release} \
 #         hugepages cpuset msr-tools i7z numactl tuned
-        
+
+# Install Go
+GO_TARBALL=go1.18.4.linux-amd64.tar.gz
+wget https://go.dev/dl/$GO_TARBALL -P /local/downloads
+rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
+grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+
 # Setup password-less ssh between nodes
 for user in $USERS; do
     if [ "$user" = "root" ]; then
