@@ -22,6 +22,16 @@ wget https://go.dev/dl/$GO_TARBALL -P /local/downloads
 rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
 grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 
+# Install Docker
+echo "Installing Docker"
+apt-get -yq install docker docker-compose
+
+# Manage Docker as a non-root user
+groupadd docker
+for user in $USERS; do
+    usermod -aG docker $user
+done
+
 # Setup password-less ssh between nodes
 for user in $USERS; do
     if [ "$user" = "root" ]; then
@@ -43,6 +53,6 @@ EOL
 done
 
 # Change user login shell to Bash
-for user in `ls /users`; do
+for user in $USERS; do
     chsh -s `which bash` $user
 done
