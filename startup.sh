@@ -43,8 +43,8 @@ for user in $USERS; do
     chmod 600 $ssh_dir/id_rsa
     chown $user: $ssh_dir/id_rsa
     ssh-keygen -y -f $ssh_dir/id_rsa > $ssh_dir/id_rsa.pub
-    cat $ssh_dir/id_rsa.pub >> $ssh_dir/authorized_keys
-    chmod 644 $ssh_dir/authorized_keys
+    cat $ssh_dir/id_rsa.pub >> $ssh_dir/authorized_keys2
+    chmod 644 $ssh_dir/authorized_keys2
     cat >>$ssh_dir/config <<EOL
     Host *
          StrictHostKeyChecking no
