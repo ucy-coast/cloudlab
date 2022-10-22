@@ -22,6 +22,9 @@ wget https://go.dev/dl/$GO_TARBALL -P /local/downloads
 rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
 grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 
+# Install Protocol Buffers compiler
+apt-get -yq install protobuf-compiler
+
 # Install Docker
 echo "Installing Docker"
 apt-get -yq install docker docker-compose
