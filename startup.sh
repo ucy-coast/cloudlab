@@ -24,6 +24,7 @@ grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PAT
 
 # Install Protocol Buffers compiler
 apt-get -yq install protobuf-compiler
+apt-get -yq install golang-goprotobuf-dev
 
 # Install Docker
 echo "Installing Docker"
