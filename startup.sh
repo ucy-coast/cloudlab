@@ -23,7 +23,7 @@ rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
 grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 
 # Install Go packages
-go install github.com/rakyll/hey@latest
+GOBIN=/usr/local/bin /usr/local/go/bin/go install github.com/rakyll/hey@latest
 
 # Install Protocol Buffers compiler
 apt-get -yq install protobuf-compiler
