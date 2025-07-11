@@ -17,10 +17,13 @@ apt-get -yq install vim gawk numactl ansible
 
 # Install Go
 echo "Installing Go"
-GO_TARBALL=go1.18.4.linux-amd64.tar.gz
+GO_TARBALL=go1.24.5.linux-amd64.tar.gz
 wget https://go.dev/dl/$GO_TARBALL -P /local/downloads
 rm -rf /usr/local/go && tar -C /usr/local -xzf /local/downloads/$GO_TARBALL
 grep -qxF 'export PATH=$PATH:/usr/local/go/bin' /etc/profile || echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+
+# Install Go packages
+go install github.com/rakyll/hey@latest
 
 # Install Protocol Buffers compiler
 apt-get -yq install protobuf-compiler
