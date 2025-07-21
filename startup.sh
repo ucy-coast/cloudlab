@@ -7,7 +7,7 @@ USERS="root `ls /users`"
 # Install packages
 echo "Installing common utilities"
 apt-get update
-apt-get -yq install vim gawk numactl ansible
+apt-get -yq install vim gawk numactl ansible jq
 # apt-get -yq install ccache htop mosh vim tmux pdsh tree axel
 
 # echo "Installing performance tools"
